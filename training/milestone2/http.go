@@ -15,7 +15,7 @@ func main() {
 	// incoming := []byte("POST / HTTP/1.1\r\nhost: hola\r\nho@m: bis\r\nContent-Length: 5\r\n\r\nhelloWORLD")
 	// incoming := []byte("POST /path HTTP/1.1\r\n\r\n")
 
-	myRequest, err := ParseRequest(incoming)
+	myRequest, _,err := ParseRequest(incoming)
 	if err != nil {
 		fmt.Println(err)
 		return

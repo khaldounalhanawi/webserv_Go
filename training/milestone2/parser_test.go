@@ -4,15 +4,17 @@ import (
 	"bytes"
 	"testing"
 )
+
 type testCase struct {
-	name        string
-	data        []byte
-	wantErr     bool
-	wantMethod  string
-	wantPath    string
-	wantVersion string
-	wantHost    string
-	wantBody    []byte
+	name          string
+	data          []byte
+	wantErr       bool
+	wantMethod    string
+	wantPath      string
+	wantVersion   string
+	wantHost      string
+	wantBody      []byte
+	wantConsumed  int
 }
 
 func TestParseRequest(t *testing.T) {
@@ -24,64 +26,97 @@ func TestParseRequest(t *testing.T) {
 		// =========================
 
 		{
-			name:        "valid GET",
-			data:        []byte("GET / HTTP/1.1\r\nHost: localhost\r\n\r\n"),
-			wantErr:     false,
-			wantMethod:  "GET",
-			wantPath:    "/",
-			wantVersion: "HTTP/1.1",
-			wantHost:    "localhost",
-			wantBody:    nil,
+			name: "valid GET",
+			data: []byte(
+				"GET / HTTP/1.1\r\n" +
+					"Host: localhost\r\n" +
+					"\r\n",
+			),
+			wantErr:      false,
+			wantMethod:   "GET",
+			wantPath:     "/",
+			wantVersion:  "HTTP/1.1",
+			wantHost:     "localhost",
+			wantBody:     nil,
 		},
+
 		{
-			name:        "valid POST",
-			data:        []byte("POST /test HTTP/1.1\r\nHost: localhost\r\nContent-Length: 5\r\n\r\nhello"),
-			wantErr:     false,
-			wantMethod:  "POST",
-			wantPath:    "/test",
-			wantVersion: "HTTP/1.1",
-			wantHost:    "localhost",
-			wantBody:    []byte("hello"),
+			name: "valid POST",
+			data: []byte(
+				"POST /test HTTP/1.1\r\n" +
+					"Host: localhost\r\n" +
+					"Content-Length: 5\r\n" +
+					"\r\n" +
+					"hello",
+			),
+			wantErr:      false,
+			wantMethod:   "POST",
+			wantPath:     "/test",
+			wantVersion:  "HTTP/1.1",
+			wantHost:     "localhost",
+			wantBody:     []byte("hello"),
 		},
+
 		{
-			name:        "GET with query string",
-			data:        []byte("GET /search?q=hello HTTP/1.1\r\nHost: localhost\r\n\r\n"),
-			wantErr:     false,
-			wantMethod:  "GET",
-			wantPath:    "/search?q=hello",
-			wantVersion: "HTTP/1.1",
-			wantHost:    "localhost",
-			wantBody:    nil,
+			name: "GET with query string",
+			data: []byte(
+				"GET /search?q=hello HTTP/1.1\r\n" +
+					"Host: localhost\r\n" +
+					"\r\n",
+			),
+			wantErr:      false,
+			wantMethod:   "GET",
+			wantPath:     "/search?q=hello",
+			wantVersion:  "HTTP/1.1",
+			wantHost:     "localhost",
+			wantBody:     nil,
 		},
+
 		{
-			name:        "POST with empty body",
-			data:        []byte("POST /submit HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n"),
-			wantErr:     false,
-			wantMethod:  "POST",
-			wantPath:    "/submit",
-			wantVersion: "HTTP/1.1",
-			wantHost:    "localhost",
-			wantBody:    nil,
+			name: "POST with empty body",
+			data: []byte(
+				"POST /submit HTTP/1.1\r\n" +
+					"Host: localhost\r\n" +
+					"Content-Length: 0\r\n" +
+					"\r\n",
+			),
+			wantErr:      false,
+			wantMethod:   "POST",
+			wantPath:     "/submit",
+			wantVersion:  "HTTP/1.1",
+			wantHost:     "localhost",
+			wantBody:     nil,
 		},
+
 		{
-			name:        "header value with spaces",
-			data:        []byte("GET / HTTP/1.1\r\nHost: localhost\r\nUser-Agent: my browser\r\n\r\n"),
-			wantErr:     false,
-			wantMethod:  "GET",
-			wantPath:    "/",
-			wantVersion: "HTTP/1.1",
-			wantHost:    "localhost",
-			wantBody:    nil,
+			name: "header value with spaces",
+			data: []byte(
+				"GET / HTTP/1.1\r\n" +
+					"Host: localhost\r\n" +
+					"User-Agent: my browser\r\n" +
+					"\r\n",
+			),
+			wantErr:      false,
+			wantMethod:   "GET",
+			wantPath:     "/",
+			wantVersion:  "HTTP/1.1",
+			wantHost:     "localhost",
+			wantBody:     nil,
 		},
+
 		{
-			name:        "lowercase host",
-			data:        []byte("GET / HTTP/1.1\r\nhost: localhost\r\n\r\n"),
-			wantErr:     false,
-			wantMethod:  "GET",
-			wantPath:    "/",
-			wantVersion: "HTTP/1.1",
-			wantHost:    "localhost",
-			wantBody:    nil,
+			name: "lowercase host",
+			data: []byte(
+				"GET / HTTP/1.1\r\n" +
+					"host: localhost\r\n" +
+					"\r\n",
+			),
+			wantErr:      false,
+			wantMethod:   "GET",
+			wantPath:     "/",
+			wantVersion:  "HTTP/1.1",
+			wantHost:     "localhost",
+			wantBody:     nil,
 		},
 
 		// =========================
@@ -89,28 +124,52 @@ func TestParseRequest(t *testing.T) {
 		// =========================
 
 		{
-			name:    "missing HTTP version",
-			data:    []byte("GET /\r\nHost: localhost\r\n\r\n"),
+			name: "missing HTTP version",
+			data: []byte(
+				"GET /\r\n" +
+					"Host: localhost\r\n" +
+					"\r\n",
+			),
 			wantErr: true,
 		},
+
 		{
-			name:    "wrong HTTP version",
-			data:    []byte("GET / HTTP/2.0\r\nHost: localhost\r\n\r\n"),
+			name: "wrong HTTP version",
+			data: []byte(
+				"GET / HTTP/2.0\r\n" +
+					"Host: localhost\r\n" +
+					"\r\n",
+			),
 			wantErr: true,
 		},
+
 		{
-			name:    "too many request line tokens",
-			data:    []byte("GET / HTTP/1.1 EXTRA\r\nHost: localhost\r\n\r\n"),
+			name: "too many request line tokens",
+			data: []byte(
+				"GET / HTTP/1.1 EXTRA\r\n" +
+					"Host: localhost\r\n" +
+					"\r\n",
+			),
 			wantErr: true,
 		},
+
 		{
-			name:    "empty method",
-			data:    []byte(" / HTTP/1.1\r\nHost: localhost\r\n\r\n"),
+			name: "empty method",
+			data: []byte(
+				" / HTTP/1.1\r\n" +
+					"Host: localhost\r\n" +
+					"\r\n",
+			),
 			wantErr: true,
 		},
+
 		{
-			name:    "empty path",
-			data:    []byte("GET  HTTP/1.1\r\nHost: localhost\r\n\r\n"),
+			name: "empty path",
+			data: []byte(
+				"GET  HTTP/1.1\r\n" +
+					"Host: localhost\r\n" +
+					"\r\n",
+			),
 			wantErr: true,
 		},
 
@@ -123,16 +182,25 @@ func TestParseRequest(t *testing.T) {
 			data:    []byte(""),
 			wantErr: true,
 		},
+
 		{
-			name:    "incomplete headers",
-			data:    []byte("GET / HTTP/1.1\r\nHost: localhost\r\n"),
+			name: "incomplete headers",
+			data: []byte(
+				"GET / HTTP/1.1\r\n" +
+					"Host: localhost\r\n",
+			),
 			wantErr: true,
 		},
+
 		{
-			name:    "no header terminator",
-			data:    []byte("GET / HTTP/1.1\r\nHost: localhost"),
+			name: "no header terminator",
+			data: []byte(
+				"GET / HTTP/1.1\r\n" +
+					"Host: localhost",
+			),
 			wantErr: true,
 		},
+
 		{
 			name: "incomplete body",
 			data: []byte(
@@ -150,23 +218,42 @@ func TestParseRequest(t *testing.T) {
 		// =========================
 
 		{
-			name:    "header without colon",
-			data:    []byte("GET / HTTP/1.1\r\nHost\r\n\r\n"),
+			name: "header without colon",
+			data: []byte(
+				"GET / HTTP/1.1\r\n" +
+					"Host\r\n" +
+					"\r\n",
+			),
 			wantErr: true,
 		},
+
 		{
-			name:    "empty header name",
-			data:    []byte("GET / HTTP/1.1\r\n: localhost\r\n\r\n"),
+			name: "empty header name",
+			data: []byte(
+				"GET / HTTP/1.1\r\n" +
+					": localhost\r\n" +
+					"\r\n",
+			),
 			wantErr: true,
 		},
+
 		{
-			name:    "whitespace in header name",
-			data:    []byte("GET / HTTP/1.1\r\nHo st: localhost\r\n\r\n"),
+			name: "whitespace in header name",
+			data: []byte(
+				"GET / HTTP/1.1\r\n" +
+					"Ho st: localhost\r\n" +
+					"\r\n",
+			),
 			wantErr: true,
 		},
+
 		{
-			name:    "whitespace before colon",
-			data:    []byte("GET / HTTP/1.1\r\nHost : localhost\r\n\r\n"),
+			name: "whitespace before colon",
+			data: []byte(
+				"GET / HTTP/1.1\r\n" +
+					"Host : localhost\r\n" +
+					"\r\n",
+			),
 			wantErr: true,
 		},
 
@@ -175,13 +262,22 @@ func TestParseRequest(t *testing.T) {
 		// =========================
 
 		{
-			name:    "missing Host",
-			data:    []byte("GET / HTTP/1.1\r\nUser-Agent: test\r\n\r\n"),
+			name: "missing Host",
+			data: []byte(
+				"GET / HTTP/1.1\r\n" +
+					"User-Agent: test\r\n" +
+					"\r\n",
+			),
 			wantErr: true,
 		},
+
 		{
-			name:    "empty Host",
-			data:    []byte("GET / HTTP/1.1\r\nHost:\r\n\r\n"),
+			name: "empty Host",
+			data: []byte(
+				"GET / HTTP/1.1\r\n" +
+					"Host:\r\n" +
+					"\r\n",
+			),
 			wantErr: true,
 		},
 
@@ -199,6 +295,7 @@ func TestParseRequest(t *testing.T) {
 			),
 			wantErr: true,
 		},
+
 		{
 			name: "negative content length",
 			data: []byte(
@@ -209,6 +306,7 @@ func TestParseRequest(t *testing.T) {
 			),
 			wantErr: true,
 		},
+
 		{
 			name: "plus content length",
 			data: []byte(
@@ -220,6 +318,7 @@ func TestParseRequest(t *testing.T) {
 			),
 			wantErr: true,
 		},
+
 		{
 			name: "duplicate content length",
 			data: []byte(
@@ -253,6 +352,7 @@ func TestParseRequest(t *testing.T) {
 			wantHost:    "localhost",
 			wantBody:    []byte("hello"),
 		},
+
 		{
 			name: "body shorter than content length",
 			data: []byte(
@@ -264,6 +364,7 @@ func TestParseRequest(t *testing.T) {
 			),
 			wantErr: true,
 		},
+
 		{
 			name: "body longer than content length",
 			data: []byte(
@@ -280,6 +381,7 @@ func TestParseRequest(t *testing.T) {
 			wantHost:    "localhost",
 			wantBody:    []byte("hello"),
 		},
+
 		// =========================
 		// RESOURCE LIMIT ATTACKS
 		// =========================
@@ -314,7 +416,7 @@ func TestParseRequest(t *testing.T) {
 		{
 			name: "body too large",
 			data: func() []byte {
-				bodySize := 10*1024*1024 + 1 // 10 MiB + 1
+				bodySize := 10*1024*1024 + 1
 
 				req := []byte(
 					"POST / HTTP/1.1\r\n" +
@@ -348,30 +450,12 @@ func TestParseRequest(t *testing.T) {
 			}(),
 			wantErr: true,
 		},
-
-		{
-			name: "two requests back to back",
-			data: []byte(
-				"GET /first HTTP/1.1\r\n" +
-					"Host: localhost\r\n" +
-					"\r\n" +
-					"GET /second HTTP/1.1\r\n" +
-					"Host: localhost\r\n" +
-					"\r\n",
-			),
-			wantErr:     false,
-			wantMethod:  "GET",
-			wantPath:    "/first",
-			wantVersion: "HTTP/1.1",
-			wantHost:    "localhost",
-			wantBody:    nil,
-		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 
-			request, err := ParseRequest(tc.data)
+			request, _, err := ParseRequest(tc.data)
 
 			if (err != nil) != tc.wantErr {
 				t.Fatalf("unexpected error state: %v", err)
@@ -406,5 +490,148 @@ func TestParseRequest(t *testing.T) {
 					tc.wantBody, request.Body)
 			}
 		})
+	}
+}
+
+// =========================
+// CONSUMED BYTES
+// =========================
+
+func TestParseRequestConsumed(t *testing.T) {
+
+	data := []byte(
+		"GET /first HTTP/1.1\r\n" +
+			"Host: localhost\r\n" +
+			"\r\n" +
+			"GET /second HTTP/1.1\r\n" +
+			"Host: localhost\r\n" +
+			"\r\n",
+	)
+
+	request, consumed, err := ParseRequest(data)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if request.Path != "/first" {
+		t.Errorf("expected path /first, got %q", request.Path)
+	}
+
+	expectedConsumed := len(
+		"GET /first HTTP/1.1\r\n" +
+			"Host: localhost\r\n" +
+			"\r\n",
+	)
+
+	if consumed != expectedConsumed {
+		t.Errorf(
+			"expected consumed %d bytes, got %d",
+			expectedConsumed,
+			consumed,
+		)
+	}
+}
+
+// =========================
+// PARSE TWO REQUESTS
+// =========================
+
+func TestParseTwoRequests(t *testing.T) {
+
+	data := []byte(
+		"GET /first HTTP/1.1\r\n" +
+			"Host: localhost\r\n" +
+			"\r\n" +
+			"GET /second HTTP/1.1\r\n" +
+			"Host: localhost\r\n" +
+			"\r\n",
+	)
+
+	first, consumed, err := ParseRequest(data)
+
+	if err != nil {
+		t.Fatalf("first request failed: %v", err)
+	}
+
+	if first.Path != "/first" {
+		t.Fatalf("expected first path /first, got %q", first.Path)
+	}
+
+	data = data[consumed:]
+
+	second, consumed, err := ParseRequest(data)
+
+	if err != nil {
+		t.Fatalf("second request failed: %v", err)
+	}
+
+	if second.Path != "/second" {
+		t.Errorf("expected second path /second, got %q", second.Path)
+	}
+
+	if consumed != len(data) {
+		t.Errorf(
+			"expected second request to consume %d bytes, got %d",
+			len(data),
+			consumed,
+		)
+	}
+}
+
+func TestParseRequestSplitAcrossReads(t *testing.T) {
+
+	part1 := []byte(
+		"GET / HTTP/1.1\r\n" +
+			"Host: loc",
+	)
+
+	part2 := []byte(
+		"alhost\r\n" +
+			"\r\n",
+	)
+
+	// First TCP read: request is incomplete.
+	_, consumed, err := ParseRequest(part1)
+
+	if err != ErrIncomplete {
+		t.Fatalf("expected ErrIncomplete, got %v", err)
+	}
+
+	if consumed != 0 {
+		t.Fatalf("expected consumed 0, got %d", consumed)
+	}
+
+	// Connection handler receives more bytes and appends them
+	// to the existing buffer.
+	buffer := append(part1, part2...)
+
+	request, consumed, err := ParseRequest(buffer)
+
+	if err != nil {
+		t.Fatalf("unexpected error after receiving more data: %v", err)
+	}
+
+	if request.Method != "GET" {
+		t.Errorf("expected method GET, got %q", request.Method)
+	}
+
+	if request.Path != "/" {
+		t.Errorf("expected path /, got %q", request.Path)
+	}
+
+	if request.Headers["host"] != "localhost" {
+		t.Errorf(
+			"expected host localhost, got %q",
+			request.Headers["host"],
+		)
+	}
+
+	if consumed != len(buffer) {
+		t.Errorf(
+			"expected consumed %d, got %d",
+			len(buffer),
+			consumed,
+		)
 	}
 }

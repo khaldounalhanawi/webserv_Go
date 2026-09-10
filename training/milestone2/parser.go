@@ -5,45 +5,41 @@ import (
 	"errors"
 )
 
-const maxBodySize = 10 * 1024 * 1024 // 10 MiB
-const maxHeaderSize = 10 * 1024 * 1024 // 10 MiB
+const maxBodySize = 10 * 1024 * 1024
+const maxHeaderSize = 8 * 1024
+var ErrIncomplete = errors.New("incomplete HTTP request")
 
-func ParseRequest(data []byte) (Request, error) { 
+func ParseRequest(data []byte) (Request, int,error) { 
 	var myRequest Request
-	var err error
+	myRequest.Headers = make (map[string]string)
 
 	// if stream empty
 	if len(data) == 0 {
-		err = errors.New("Empty request")
-		return myRequest, err
+		return myRequest, 0, ErrIncomplete
 	}
-
-	// initiate headers array
-	myRequest.Headers = make (map[string]string)
 
 	// Find end of headers
-	data, body, found := bytes.Cut(data, []byte("\r\n\r\n"))
-	if !found {
-		return myRequest, errors.New("incomplete headers")
+	headerEnd := bytes.Index(data, []byte("\r\n\r\n"))
+	if headerEnd == -1 {
+		return myRequest, 0, ErrIncomplete
 	}
 
-	if len(data) > maxHeaderSize {
-		return myRequest, errors.New("Header too large")
-	}
-	if len(body) > maxBodySize {
-		return myRequest, errors.New("Body too large")
+	headerData := data[:headerEnd]
+	body := data[headerEnd+4:]
+
+	if len(headerData) > maxHeaderSize {
+		return myRequest, 0, errors.New("Header too large")
 	}
 
 	// get request line tokens
-	requestLineTokens, headers, err := GetRequestLineTokens(data)
+	requestLineTokens, headers, err := GetRequestLineTokens(headerData)
 	if err != nil {
-		return myRequest, err
+		return myRequest, 0, err
 	}
 
 	// validate request line tokens
 	if !ValidateRequestLineTokens(requestLineTokens) {
-		err = errors.New("Bad format")
-		return myRequest, err
+		return myRequest, 0, errors.New("Bad format")
 	}
 
 	myRequest.Method = string(requestLineTokens[0])
@@ -53,49 +49,35 @@ func ParseRequest(data []byte) (Request, error) {
 	// get headers
 	myRequest.Headers, err = GetHeaders(headers)
 	if err != nil {
-		return myRequest, err
+		return myRequest, 0, err
 	}
 
 	// validate headers
 	err = ValidateHeaders(myRequest.Headers)
 	if err != nil {
-		return myRequest, err
+		return myRequest, 0, err
 	}
 
-	// validate headers against body
-	length, err := GetContentLength(myRequest.Headers)
+	// validate content length in header against body
+	contentLength, err := GetContentLength(myRequest.Headers)
 	if err != nil {
-		return myRequest, err
+		return myRequest, 0, err
 	}
-	if length == 0 {
+	if contentLength > maxBodySize {
+		return myRequest, 0, errors.New("Body too large")
+	}
+	if len(body) < contentLength {
 		myRequest.Body = nil
-	}
-	if length == 0 && len(body) != 0 {
-		return myRequest, errors.New("400 Bad Request")
-	}
-	if len(body) < length {
-		myRequest.Body = nil
-		return myRequest, errors.New("incomplete body")
-	}
-	if length > maxBodySize {
-		return myRequest, errors.New("Body too large")
+		return myRequest, 0, ErrIncomplete
 	}
 
-	// add body
-	myRequest.Body = body[:length]
-	return myRequest, err
+	if contentLength == 0 {
+		myRequest.Body = nil
+	} else {
+		myRequest.Body = body[:contentLength]
+	}
+
+	consumed := headerEnd + 4 + contentLength
+
+	return myRequest, consumed, nil
 }
-
-// // getContentLength TESTER
-// func main() {
-
-// 	var tester map[string]string =  map[string]string{"banana" : "one","content-length":"5"}
-
-// 	val, err := getContentLength (tester)
-// 	if err != nil {
-// 		fmt.Println (err)
-// 		return
-// 	}
-// 	fmt.Println(val)
-// }
-
