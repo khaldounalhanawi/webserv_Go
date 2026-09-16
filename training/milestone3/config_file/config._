@@ -1,0 +1,19 @@
+
+server{listen 2020
+
+	route / static
+
+	root ./www
+
+	route /uploads static
+}
+
+server{
+	listen 8080
+
+	route / static
+
+	root ./www
+
+	route /uploads static
+}

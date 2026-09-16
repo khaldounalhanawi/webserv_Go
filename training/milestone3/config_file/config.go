@@ -3,12 +3,25 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
+	"strconv"
 )
 
-type Config struct {
+type Route struct {
+	url		string
+	handler	string
+}
 
+type Config struct {
+	ListenPort		int
+	root			string
+	routes			[]Route
+	error_page		string
+	max_header_size	int
+	max_body_size	int
+	cgi_path		[]string
 }
 
 func SplitTokenByBrackets(token []byte) [][]byte {
@@ -68,9 +81,69 @@ func getTokensFromFile(path string) ([][]byte, error) {
 }
 
 
-func getConfig(path string) (*Config, error) {
+func PutTokensInConfig(tokens [][]byte) ([]*Config, error) {
 
-	var config *Config
+	var configs 	[]*Config
+	var open		bool
+	var needServer		bool
+	var config		*Config
+	var err			error
+	var	tokensLen	int
+
+	tokensLen = len(tokens)
+
+	for i := 0; i < tokensLen; i++ {
+ 
+		// first token must be server
+		if i == 0 { needServer = true}
+		if needServer && string(tokens[i]) == "server" {
+			i ++
+			if i >= tokensLen { return nil, errors.New("missing {")}
+			needServer = false
+			// check for open { after wards
+			if string(tokens[i]) == "{" {
+				open = true
+				i ++
+				if i >= tokensLen { return nil, errors.New("missing args")}
+				config = new(Config)
+			} else {
+				return nil, errors.New("Need openning {") }
+		} else if needServer {
+			return nil, errors.New("Missing Server key word") }
+
+		// switch amongst cases
+		switch {
+		case string(tokens[i]) == "listen":
+			i ++
+			if i >= tokensLen { return nil, errors.New("missing listen arg")}
+			config.ListenPort, err = strconv.Atoi(string(tokens[i]))
+			if err != nil {
+				return nil, err }
+
+		case string(tokens[i]) == "root":
+			i ++
+			if i >= tokensLen { return nil, errors.New("missing root arg")}
+			config.root = string(tokens[i])
+
+		case string(tokens[i]) == "}":
+			open = false
+			needServer = true
+			configs = append(configs, config)
+
+		default :
+			return nil, errors.New("Unknown setting")
+		}
+	}
+
+	if open {
+		return nil, errors.New("Unclosed bracket") }
+	
+	return configs, nil
+}
+
+func getConfig(path string) ([]*Config, error) {
+
+	var config []*Config
 	var tokens [][]byte
 
 	// get tokens from file
@@ -78,13 +151,22 @@ func getConfig(path string) (*Config, error) {
 	if err != nil {
 		return nil, err }
 
+	// put tokens into config
+	config, err = PutTokensInConfig(tokens)
+	if err != nil {
+		println(err.Error())
+		return nil, err }
 
+	// validate configs
 
 	// just for test, print out tokens
-	for n, i := range tokens {
-		fmt.Println(n, "_Token:", string(i))
-	}
+	// for n, i := range tokens {
+	// 	fmt.Println(n, "_Token:", string(i))
+	// }
 
+	for n, i := range config {
+		fmt.Println(n, *i)
+	}
 	return config, nil
 }
 
