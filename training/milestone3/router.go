@@ -4,11 +4,6 @@ import (
 	"strings"
 )
 
-type Route struct {
-	url		string
-	handler	string
-}
-
 func matches(route string, request string) bool {
 	if route == "/" || route == request {
 		return true

@@ -7,3 +7,8 @@ type Request struct {
 	Headers	map[string]string
 	Body	[]byte
 }
+
+type Route struct {
+	url		string
+	handler	string
+}
