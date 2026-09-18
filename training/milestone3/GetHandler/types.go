@@ -1,4 +1,12 @@
-package LoadConfig
+package gethandler
+
+type Request struct {
+	Method	string
+	Path	string
+	Version	string
+	Headers	map[string]string
+	Body	[]byte
+}
 
 type Route struct {
 	url		string
@@ -22,12 +30,4 @@ type ServerSettings struct {
 	default_body_size		int
 	default_header_size		int
 	supports				[]string
-}
-
-var MyServerSettings = ServerSettings{
-	maximum_header_limit:	8192,
-	maximum_body_limit:		1048576,
-	default_body_size:		1024,
-	default_header_size:	512,
-	supports:				[]string{"static", "cgi"},
 }
