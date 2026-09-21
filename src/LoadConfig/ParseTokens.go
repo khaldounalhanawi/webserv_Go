@@ -3,8 +3,8 @@ package loadConfig
 import (
 	"errors"
 	"strconv"
+	. "types"
 )
-
 
 func ParseTokens(tokens [][]byte) ([]ParsedConfig, error) {
 
@@ -34,7 +34,7 @@ func ParseTokens(tokens [][]byte) ([]ParsedConfig, error) {
 
 				// initiate a config
 				config = new(Config)
-				config.routes = make([]Route,0)
+				config.Routes = make([]Route,0)
 				declared = make(map[string]bool)
 				} else { return parsed_configs, errors.New("Need openning {") }
 
@@ -55,27 +55,27 @@ func ParseTokens(tokens [][]byte) ([]ParsedConfig, error) {
 		case "root":
 			if declared["root"] {return parsed_configs, errors.New("Root Double decalration")}
 			if i++; i >= tokensLen { return parsed_configs, errors.New("missing root arg")}
-			config.root = string(tokens[i])
+			config.Root = string(tokens[i])
 			declared["root"] = true
 
 		case "error_page":
 			if declared["error_page"] {return parsed_configs, errors.New("error_page Double decalration")}
 			if i++; i >= tokensLen {return parsed_configs, errors.New("missing error_page arg")}
-			config.error_page = string(tokens[i])
+			config.Error_page = string(tokens[i])
 			declared["error_page"] = true
 
 		case "route":
 			var RouteItem Route
 			if i++; i >= tokensLen { return parsed_configs, errors.New("missing route arg")}
-			RouteItem.url = string(tokens[i])
+			RouteItem.Url = string(tokens[i])
 			if i++; i >= tokensLen { return parsed_configs, errors.New("missing route arg")}
-			RouteItem.handler = string(tokens[i])
-			config.routes = append(config.routes, RouteItem)
+			RouteItem.Handler = string(tokens[i])
+			config.Routes = append(config.Routes, RouteItem)
 
 		case "max_header_size":
 			if declared["max_header_size"] {return parsed_configs, errors.New("max_header_size Double decalration")}
 			if i++; i >= tokensLen { return parsed_configs, errors.New("missing max_header_size arg")}
-			config.max_header_size, err = strconv.Atoi(string(tokens[i]))
+			config.Max_header_size, err = strconv.Atoi(string(tokens[i]))
 			if err != nil {
 				return parsed_configs, err }
 			declared["max_header_size"] = true
@@ -83,7 +83,7 @@ func ParseTokens(tokens [][]byte) ([]ParsedConfig, error) {
 		case "max_body_size":
 			if declared["max_body_size"] {return parsed_configs, errors.New("max_body_size Double decalration")}
 			if i++; i >= tokensLen { return parsed_configs, errors.New("missing max_body_size arg")}
-			config.max_body_size, err = strconv.Atoi(string(tokens[i]))
+			config.Max_body_size, err = strconv.Atoi(string(tokens[i]))
 			if err != nil {
 				return parsed_configs, err }
 			declared["max_body_size"] = true
@@ -92,10 +92,10 @@ func ParseTokens(tokens [][]byte) ([]ParsedConfig, error) {
 			open = false
 			needServer = true
 			var parsed_config ParsedConfig
-			parsed_config.config = config
-			parsed_config.declared = make(map[string]bool)
+			parsed_config.Config = config
+			parsed_config.Declared = make(map[string]bool)
 			for key, value := range declared {
-				parsed_config.declared[key] = value
+				parsed_config.Declared[key] = value
 			}
 			parsed_configs = append(parsed_configs, parsed_config)
 			for k := range declared {

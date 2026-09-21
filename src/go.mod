@@ -1,0 +1,11 @@
+module main
+
+go 1.26.6
+
+require types v0.0.0
+require parser v0.0.0
+require loadConfig v0.0.0
+
+replace types => ./Types
+replace parser => ./Parser
+replace loadConfig => ./LoadConfig

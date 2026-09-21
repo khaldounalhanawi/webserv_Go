@@ -1,8 +1,13 @@
-package LoadConfig
+package loadConfig
 
 type Route struct {
 	url		string
 	handler	string
+}
+
+type ParsedConfig struct {
+	config		*Config
+	declared	map[string]bool
 }
 
 type Config struct {
@@ -12,8 +17,6 @@ type Config struct {
 	error_page		string
 	max_header_size	int
 	max_body_size	int
-
-	declared		map[string]bool
 }
 
 type ServerSettings struct {

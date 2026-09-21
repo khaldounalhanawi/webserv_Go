@@ -3,6 +3,7 @@ package router
 import (
 	"fmt"
 	"testing"
+	. "types"
 )
 
 type test struct {
@@ -53,7 +54,7 @@ func	TestRouter(t *testing.T) {
 	for i := range tests{
 		request.Path = tests[i].input
 		router := Router(request, routesList)
-		if router.url == tests[i].answer {
+		if router.Url == tests[i].answer {
 			fmt.Printf("Passed test %-20s --> %-20s\n", tests[i].input, tests[i].answer)
 		} else {
 			fmt.Printf("Failed test %-20s --> %-20s\n", tests[i].input, tests[i].answer)

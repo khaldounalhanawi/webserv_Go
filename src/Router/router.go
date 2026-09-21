@@ -2,6 +2,7 @@ package router
 
 import (
 	"strings"
+	. "types"
 )
 
 func matches(route string, request string) bool {
@@ -18,8 +19,8 @@ func Router(request Request, routesList []Route) *Route {
 
 	for i := range routesList {
 		item := &routesList[i]
-		if matches(item.url, request.Path) {
-			if final == nil || len(item.url) > len(final.url) {
+		if matches(item.Url, request.Path) {
+			if final == nil || len(item.Url) > len(final.Url) {
 				final = item
 			}
 		}

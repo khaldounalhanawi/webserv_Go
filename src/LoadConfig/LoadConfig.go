@@ -1,7 +1,7 @@
 package loadConfig
 
 import (
-	"fmt"
+	. "types"
 )
 
 func LoadConfig(path string) ([]*Config, error) {
@@ -17,20 +17,10 @@ func LoadConfig(path string) ([]*Config, error) {
 		println(err.Error())
 		return nil, err }
 
-	// for _,i := range parsedConfigs {
-	// 	fmt.Println(*i.config)
-	// 	fmt.Println("map says: ", i.declared)
-	// }
-
 	err = ValidateConfigs(parsedConfigs)
 	if err != nil {
 		println(err.Error())
 		return nil, err }
-
-	// print configs
-	for n, i := range parsedConfigs {
-		fmt.Println(n, i)
-	}
 
 	return nil, nil
 }
