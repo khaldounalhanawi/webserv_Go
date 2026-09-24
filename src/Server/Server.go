@@ -17,8 +17,10 @@ func NewServer(config Config) (*Server, error) {
 	var err error
 
 	myServer.Config = config
-	myServer.Listener, err = net.Listen("tcp", ":" + strconv.Itoa(config.ListenPort))
-
+	myServer.Listener, err = net.Listen(
+							"tcp",
+							":" + strconv.Itoa(config.ListenPort),
+							)
 	return myServer, err
 }
 
