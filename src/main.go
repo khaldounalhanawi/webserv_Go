@@ -2,41 +2,32 @@ package main
 
 import (
 	"loadConfig"
-	"parser"
-	. "types"
+	"server"
 )
 
 func main(){
-	var route Route
 
 	// parse & validate Configs
-	Configs, err := loadConfig.LoadConfig("config.config")
+	configs, err := loadConfig.LoadConfig("config.config")
 	if err != nil {
 		println(err.Error())
 		return }
-	println (Configs)
 
-	// get tcp input
-	var input []byte // to change
+	// for each config
+	for _, config := range configs {
 
-	// parse requests
-	// while loop 
-	request, _, err := parser.ParseRequest(input)
-	if err != nil {
-		println(err.Error()) 
-		return }
-	println(request)
+		// create server
+		myServer, err := server.NewServer(*config)
+		if err != nil { return } // print it out??
+		
+		// start server
+		err = myServer.Start()
+		if err != nil { return }
 
-	// for each request
-		// request handler
-		// give out response
-		// tcp
-	// loop again
+		// close server
+		err = myServer.Close()
+		if err != nil { return }
+	}
 
-
-
-	_,i,err :=  parser.ParseRequest ([]byte{'h','y','a'})
-	println (route.Url)
-	println (i)
-	println (err.Error())
+	return
 }
