@@ -29,7 +29,7 @@ func ParseRequest(data []byte) (Request, int, error) {
 	body := data[headerEnd+4:]
 
 	if len(headerData) > maxHeaderSize {
-		return myRequest, 0, errors.New("Header too large")
+		return myRequest, 0, errors.New("@ParseRequest: Header too large")
 	}
 
 	// get request line tokens
@@ -40,7 +40,7 @@ func ParseRequest(data []byte) (Request, int, error) {
 
 	// validate request line tokens
 	if !ValidateRequestLineTokens(requestLineTokens) {
-		return myRequest, 0, errors.New("Bad format")
+		return myRequest, 0, errors.New("@ParseRequest.ValidateRequestLineTokens: Bad format")
 	}
 
 	myRequest.Method = string(requestLineTokens[0])
@@ -65,7 +65,7 @@ func ParseRequest(data []byte) (Request, int, error) {
 		return myRequest, 0, err
 	}
 	if contentLength > maxBodySize {
-		return myRequest, 0, errors.New("Body too large")
+		return myRequest, 0, errors.New("@ParseRequest.GetContentLength: Body too large")
 	}
 	if len(body) < contentLength {
 		myRequest.Body = nil

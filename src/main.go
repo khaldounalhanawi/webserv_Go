@@ -29,7 +29,9 @@ func main(){
 
 		// create server
 		myServer, err := server.NewServer(*config)
-		if err != nil { return } // print it out??
+		if err != nil { 
+			fmt.Println(err)
+			return }
 
 		// append server to list of server for later closing
 		serverArray = append(serverArray, myServer)

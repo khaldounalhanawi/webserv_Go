@@ -1,6 +1,7 @@
 package loadConfig
 
 import (
+	"fmt"
 	. "types"
 )
 
@@ -10,17 +11,20 @@ func LoadConfig(path string) ([]*Config, error) {
 
 	tokens , err := TokenizeFile(path)
 	if err != nil {
-		return nil, err }
+		return nil, fmt.Errorf("@LoadConfig.TokenizeFile: %v", err) }
 
 	parsedConfigs, err := ParseTokens(tokens)
 	if err != nil {
-		println(err.Error())
-		return nil, err }
+		return nil, fmt.Errorf("@LoadConfig.ParseTokens: %v", err) }
 
 	err = ValidateConfigs(parsedConfigs)
 	if err != nil {
-		println(err.Error())
-		return nil, err }
+		return nil, fmt.Errorf("@LoadConfig.ValidateConfigs: %v", err) }
 
-	return nil, nil
+	finalConfigsArray := make([]*Config, 0)
+	for _, parsedConfig := range parsedConfigs {
+		finalConfigsArray = append(finalConfigsArray, parsedConfig.Config)
+	}
+
+	return finalConfigsArray, nil
 }
